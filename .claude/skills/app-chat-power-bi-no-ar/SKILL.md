@@ -7,7 +7,7 @@ description: Use para colocar no ar, com as contas da pessoa, o app que conversa
 
 O resultado é o app da pessoa no ar, com login, chat, voz e visuais, respondendo direto do modelo semântico dela. Tudo fica nas contas dela: GitHub, Railway, Vercel, WorkOS, Claude e OpenAI.
 
-A pessoa começa com duas coisas: o modelo semântico publicado no Power BI e o acesso ao repositório template do app, que chega por convite do GitHub depois da compra. O resto nasce neste roteiro: as contas, os conectores no Claude, o repositório dela, a conexão com o Power BI, o contexto do modelo, o backend, o login, o frontend e os testes.
+A pessoa começa com duas coisas: o modelo semântico publicado no Power BI e o link do repositório template do app, que vai no e-mail de confirmação da compra e na área de membros: https://github.com/veridian-intelligence-ai/chatpbi. O resto nasce neste roteiro: as contas, os conectores no Claude, o repositório dela, a conexão com o Power BI, o contexto do modelo, o backend, o login, o frontend e os testes.
 
 ## Como conduzir
 
@@ -60,12 +60,12 @@ Direct Lake pede capacidade Fabric no workspace (vale o teste ou uma F2) e o pas
 
 ## Etapa 3. Repositório da pessoa
 
-O repositório do app é um template privado do Vinicius. A pessoa trabalha numa cópia dela, também privada, de onde o Railway e a Vercel publicam. Sem acesso ao template, a pessoa aceita o convite do GitHub que chegou por e-mail.
+O repositório do app é um template público do Vinicius (https://github.com/veridian-intelligence-ai/chatpbi). A pessoa trabalha numa cópia dela, privada, de onde o Railway e a Vercel publicam. Para criar a cópia, a pessoa entra na conta dela do GitHub.
 
 1. Criar a cópia:
    - repositório do app marcado como template: Use this template, Create a new repository, na conta da pessoa, Private, sem "Include all branches";
    - sem template: a pessoa cria um repositório privado e vazio (sem README, .gitignore ou licença), e o Claude clona o original e envia a `main` para ele.
-   Fork não serve: o fork de um repositório privado some quando o acesso ao original acaba.
+   Fork não serve: o fork de um repositório público também fica público, e a cópia precisa ser privada, porque vai guardar o contexto do modelo da pessoa.
 2. Em Settings, Actions, as Actions ficam ligadas: o CI roda ruff e pytest no backend e lint, tipos, testes e build no frontend.
 3. Ajustar o CLAUDE.md da cópia, numa branch com pull request. A regra "Nada de cliente (nome, código, regra ou dado) entra neste repositório" é do repositório original. Na cópia, ela vira: "Nenhum dado exportado do modelo, segredo ou dado pessoal entra no repositório. O contexto do modelo (nomes, regras e DAX validado) entra."
 4. Se os apps do Railway ou da Vercel no GitHub estiverem liberados só para repositórios escolhidos, a pessoa inclui o novo em GitHub, Settings, Applications, Configure.
