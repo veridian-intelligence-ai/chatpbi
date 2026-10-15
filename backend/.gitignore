@@ -1,0 +1,61 @@
+# ─────────────────────────────────────────────
+# Backend do app: .gitignore
+# ─────────────────────────────────────────────
+
+# Secrets / variáveis de ambiente (NUNCA committar)
+.env
+.env.*
+!.env.example
+auth.env
+auth.env.*
+*.env.local
+*.pem
+*.key
+*.pfx
+*.p12
+
+# Virtualenvs
+.venv/
+venv/
+env/
+ENV/
+
+# Bytecode / cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# Build artifacts (PyInstaller, etc.)
+build/
+dist/
+*.spec
+*.egg-info/
+*.egg
+
+# Logs
+logs/
+*.log
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Testes / cobertura
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Banco de dados local (caso surjam dumps)
+*.sqlite
+*.sqlite3
+*.db
+
+# ngrok
+ngrok.yml
+.ngrok2/

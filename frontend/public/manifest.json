@@ -1,0 +1,45 @@
+{
+  "name": "ChatPBI",
+  "short_name": "ChatPBI",
+  "description": "Converse com os dados do Power BI, com chat, voz e gráficos.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0B1A16",
+  "theme_color": "#0C5343",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": [
+    "business",
+    "productivity",
+    "finance"
+  ],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#0C5343" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="ChatPBI" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon-180.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="ChatPBI" />
+    <link rel="manifest" href="/manifest.json" />
+    <!-- Nome do app: troque aqui, no public/manifest.json e em src/config/app.ts. -->
+    <title>ChatPBI: converse com os dados do Power BI</title>
+    <meta name="description" content="Pergunte em linguagem natural e receba respostas, análises e gráficos dos dados do Power BI, com chat e voz." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ChatPBI" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content="ChatPBI: converse com os dados do Power BI" />
+    <meta property="og:description" content="Pergunte em linguagem natural e receba respostas, análises e gráficos dos dados do Power BI, com chat e voz." />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="ChatPBI: converse com os dados do Power BI" />
+    <meta name="twitter:description" content="Pergunte em linguagem natural e receba respostas, análises e gráficos dos dados do Power BI, com chat e voz." />
+  </head>
+  <body>
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('veridian-theme');
+          if (t !== 'light') document.documentElement.classList.add('dark');
+        } catch (e) { document.documentElement.classList.add('dark'); }
+      })();
+    </script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

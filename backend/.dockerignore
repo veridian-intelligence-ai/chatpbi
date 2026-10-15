@@ -1,0 +1,54 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv
+venv
+env
+
+# Secrets / config local (gerimos via env vars)
+.env
+.env.*
+auth.env
+auth.env.*
+
+# IDE
+.vscode
+.idea
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation (não vai para imagem)
+*.md
+docs/
+
+# Logs
+logs/
+*.log
+
+# Build
+build/
+dist/
+*.egg-info/
+
+# Tests
+tests/
+.pytest_cache/
+.coverage
+
+# Pre-commit (não corre dentro do container)
+.pre-commit-config.yaml
+.secrets.baseline
+
+# Windows scripts (não precisamos em Linux)
+*.bat

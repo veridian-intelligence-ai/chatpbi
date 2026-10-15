@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+.vercel/
+
+# Segredos: nunca no Git. Cada parte tem um .env.example só com os nomes.
+.env
+.env.*
+!.env.example
+
+.DS_Store
+*.log
