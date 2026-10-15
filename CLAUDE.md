@@ -6,7 +6,7 @@ App que conversa com os dados de um modelo semântico do Power BI, com chat, voz
 
 1. Conexão com o Power BI: registro do app no Entra ID, service principal, grupo, permissão no workspace, Build no modelo e, em Direct Lake, a identidade fixa do modelo (identidade do workspace, sem SSO). Skill: `.claude/skills/conexao-power-bi`.
 2. Backend no Railway (`backend/`): Python e FastAPI, dois serviços da mesma imagem. O serviço `backend` é a API: valida a sessão, chama o Claude, roda o DAX no modelo pela API Execute Queries, guarda as conversas no Postgres e abre a voz ao vivo da OpenAI. O serviço `auth` é o login pelo WorkOS. Skill: `.claude/skills/backend`.
-3. Repositório no GitHub: este repositório, privado. Skill: `.claude/skills/repositorio`.
+3. Repositório no GitHub: este repositório. O original é um template público; a cópia de cada pessoa fica privada. Skill: `.claude/skills/repositorio`.
 4. Frontend na Vercel (`frontend/`): Vite, React e TypeScript, com as telas de conversa, voz e visuais. Skill: `.claude/skills/frontend`.
 5. Login com o WorkOS: e-mail e senha do WorkOS, e só entra quem está cadastrado no app (`auth.users`). Skill: `.claude/skills/login`.
 
