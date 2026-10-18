@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import sys
@@ -8,10 +9,10 @@ from typing import Any, Dict, List, Optional
 import anthropic
 import httpx
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse, PlainTextResponse, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field
 
@@ -37,7 +38,7 @@ from api.adapters.fabric import (
     FabricConfigError,
 )
 from api.orchestrator import DEFAULT_MAX_TOKENS, DAXConversationOrchestrator
-from api.prompts_fabric import PROMPT_VERSION, build_voice_system_block
+from api.prompts_fabric import ASSISTANT_NAME, PROMPT_VERSION, build_voice_system_block
 from api.realtime_voice import (
     RealtimeError,
     create_client_secret,
@@ -50,6 +51,34 @@ from api.suggestion_templates import (
     build_context_dax,
     now_in_model_timezone,
     render_templates,
+)
+from api.whatsapp import (
+    DEFAULT_ELEVENLABS_TTS_MODEL,
+    DEFAULT_OPENAI_TTS_MODEL,
+    DEFAULT_OPENAI_TTS_VOICE,
+    InboundMessage,
+    WhatsAppConfig,
+    allowed_numbers_from_env,
+    build_whatsapp_system_block,
+    claim_message,
+    download_media,
+    find_active_user,
+    history_for_model,
+    is_reset_command,
+    parse_inbound,
+    run_whatsapp_migrations,
+    send_audio,
+    send_text,
+    session_id_for,
+    synthesize_speech_elevenlabs,
+    synthesize_speech_openai,
+    text_for_speech,
+    to_ogg_opus,
+    to_whatsapp_format,
+    transcribe_audio,
+    unwrap_answer,
+    upload_media,
+    verify_signature,
 )
 from cors_config import get_allowed_origins
 
@@ -945,3 +974,243 @@ async def text_to_speech(
         raise HTTPException(status_code=504, detail="Timeout na geração de áudio")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ---------------------------------------------------------------------------
+# Canal do WhatsApp (WhatsApp Cloud API, oficial da Meta)
+# ---------------------------------------------------------------------------
+# Liga só com WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_VERIFY_TOKEN e
+# WHATSAPP_APP_SECRET. Sem elas, as rotas /whatsapp/* respondem 404.
+# Só respondem os números de WHATSAPP_ALLOWED_NUMBERS (numero=email), cada um
+# ligado a um usuário ativo de auth.users. Ver api/whatsapp.py.
+
+WHATSAPP_CONFIG: Optional[WhatsAppConfig] = WhatsAppConfig.from_env()
+WHATSAPP_MODEL = os.getenv("WHATSAPP_MODEL", "").strip() or MODEL
+OPENAI_TRANSCRIBE_MODEL = os.getenv("OPENAI_TRANSCRIBE_MODEL", "gpt-4o-mini-transcribe")
+# Voz da resposta quando a pergunta veio em áudio: openai (padrão) ou elevenlabs.
+WHATSAPP_TTS_PROVIDER = (os.getenv("WHATSAPP_TTS_PROVIDER", "openai").strip() or "openai").lower()
+WHATSAPP_TTS_MODEL = os.getenv("WHATSAPP_TTS_MODEL", "").strip()
+WHATSAPP_TTS_VOICE = os.getenv("WHATSAPP_TTS_VOICE", "").strip()
+
+if WHATSAPP_CONFIG is not None:
+    run_whatsapp_migrations()
+
+WHATSAPP_TEXTS = {
+    "erro": "Não consegui responder agora. Tente de novo em alguns minutos.",
+    "limite": "Recebi muitas perguntas seguidas. Aguarde um minuto e pergunte de novo.",
+    "tipo": "Por enquanto eu respondo a mensagens de texto e de áudio.",
+    "audio_off": "Por enquanto eu respondo só a mensagens de texto.",
+    "audio_vazio": "Não consegui entender o áudio. Pode escrever a pergunta?",
+    "vazio": "Mande a sua pergunta sobre os dados.",
+    "novo": "Pronto, comecei uma conversa nova. Qual é a sua pergunta?",
+}
+
+
+def _build_whatsapp_orchestrator() -> DAXConversationOrchestrator:
+    return DAXConversationOrchestrator(
+        anthropic_client=anthropic_client,
+        fabric_client=_get_fabric_client(),
+        dataset_id=FABRIC_DATASET_ID,
+        model=WHATSAPP_MODEL,
+        max_tokens=MAX_TOKENS,
+    )
+
+
+def _whatsapp_question(config: WhatsAppConfig, message: InboundMessage) -> Optional[str]:
+    """Texto da pergunta. Para áudio, transcreve. None quando já respondeu."""
+    if message.type == "text":
+        if not message.text:
+            send_text(config, message.from_phone, WHATSAPP_TEXTS["vazio"])
+            return None
+        return message.text
+    if message.type == "audio":
+        openai_key = realtime_api_key()
+        if not openai_key or not message.media_id:
+            send_text(config, message.from_phone, WHATSAPP_TEXTS["audio_off"])
+            return None
+        audio, mime_type = download_media(config, message.media_id)
+        text = transcribe_audio(audio, mime_type, openai_key, OPENAI_TRANSCRIBE_MODEL)
+        if not text:
+            send_text(config, message.from_phone, WHATSAPP_TEXTS["audio_vazio"])
+            return None
+        return text
+    send_text(config, message.from_phone, WHATSAPP_TEXTS["tipo"])
+    return None
+
+
+def _reply_with_audio(config: WhatsAppConfig, to_phone: str, answer: str) -> Optional[str]:
+    """Responde em mensagem de voz. Devolve "provedor/modelo" da voz usada, ou
+    None quando não deu (o chamador manda a resposta em texto)."""
+    spoken = text_for_speech(answer)
+    if not spoken:
+        return None
+    try:
+        if WHATSAPP_TTS_PROVIDER == "elevenlabs":
+            api_key = os.getenv("ELEVENLABS_API_KEY", "").strip()
+            voice_id = WHATSAPP_TTS_VOICE or os.getenv("ELEVENLABS_VOICE_ID", "").strip()
+            if not api_key or not voice_id:
+                print("[whatsapp] voz ElevenLabs sem ELEVENLABS_API_KEY ou voz: resposta em texto")
+                return None
+            mp3, tts_model = synthesize_speech_elevenlabs(
+                spoken, api_key, voice_id, WHATSAPP_TTS_MODEL or DEFAULT_ELEVENLABS_TTS_MODEL
+            )
+            used = f"elevenlabs/{tts_model}"
+        else:
+            api_key = os.getenv("OPENAI_API_KEY", "").strip()
+            if not api_key:
+                print("[whatsapp] voz sem OPENAI_API_KEY: resposta em texto")
+                return None
+            tts_model = WHATSAPP_TTS_MODEL or DEFAULT_OPENAI_TTS_MODEL
+            mp3 = synthesize_speech_openai(
+                spoken, api_key, WHATSAPP_TTS_VOICE or DEFAULT_OPENAI_TTS_VOICE, tts_model
+            )
+            used = f"openai/{tts_model}"
+        media_id = upload_media(config, to_ogg_opus(mp3), "audio/ogg", "resposta.ogg")
+        if not send_audio(config, to_phone, media_id):
+            return None
+        print(f"[whatsapp] resposta em áudio enviada ({used})")
+        return used
+    except Exception as exc:  # noqa: BLE001 - cai para a resposta em texto
+        print(f"[whatsapp] resposta em áudio falhou, vai em texto: {exc}")
+        return None
+
+
+def handle_whatsapp_message(message: InboundMessage) -> None:
+    """Responde uma mensagem do WhatsApp. Roda em segundo plano.
+
+    O webhook já devolveu 200 à Meta, então nenhum erro daqui sobe: tudo vira
+    log e, quando dá, uma resposta curta para a pessoa.
+    """
+    config = WHATSAPP_CONFIG
+    if config is None:
+        return
+
+    email = allowed_numbers_from_env().get(message.from_phone)
+    if not email:
+        print(f"[whatsapp] número fora da lista ignorado: ...{message.from_phone[-4:]}")
+        return
+
+    try:
+        if not claim_message(message.message_id, message.from_phone):
+            print(f"[whatsapp] mensagem repetida ignorada: {message.message_id}")
+            return
+
+        user = find_active_user(email)
+        if user is None:
+            print(f"[whatsapp] número sem usuário ativo no app: ...{message.from_phone[-4:]}")
+            return
+
+        try:
+            check_rate_limit(user["user_id"], "/whatsapp/webhook")
+        except HTTPException:
+            send_text(config, message.from_phone, WHATSAPP_TEXTS["limite"])
+            return
+
+        question = _whatsapp_question(config, message)
+        if question is None:
+            return
+
+        session_id = session_id_for(message.from_phone)
+        conversation_store.ensure_session(session_id, module=MODULE, user_id=user["user_id"])
+        if not conversation_store.check_session_owner(
+            session_id, user["user_id"], user["client_id"], module=MODULE
+        ):
+            print(f"[whatsapp] conversa de outro usuário: {session_id}")
+            return
+
+        if is_reset_command(question):
+            conversation_store.clear(session_id, module=MODULE)
+            send_text(config, message.from_phone, WHATSAPP_TEXTS["novo"])
+            return
+
+        stored_history = conversation_store.get_history(session_id, module=MODULE)
+        conversation_store.append_user_message(session_id, question, module=MODULE)
+
+        model = get_active_model()
+        # Áudio usa o mesmo modelo do texto: o bloco de voz só muda o formato.
+        voice = message.type == "audio"
+        system_blocks = [build_whatsapp_system_block(ASSISTANT_NAME, model.DATA_SUBJECT)]
+        if voice:
+            system_blocks.append(build_voice_system_block())
+        result = _build_whatsapp_orchestrator().run(
+            user_message=question,
+            conversation_history=history_for_model(stored_history[-12:]),
+            extra_system_blocks=system_blocks,
+        )
+        answer = to_whatsapp_format(unwrap_answer(result.answer)) or WHATSAPP_TEXTS["erro"]
+
+        conversation_store.append_assistant_message(
+            session_id,
+            {"message_type": "whatsapp_response", "answer": answer},
+            module=MODULE,
+        )
+        emit_usage_event(
+            client_id=user["client_id"],
+            user_id=user["user_id"],
+            session_id=session_id,
+            endpoint="/whatsapp/webhook",
+            provider="anthropic",
+            model=WHATSAPP_MODEL,
+            input_tokens=result.total_input_tokens,
+            output_tokens=result.total_output_tokens,
+            cache_read_tokens=result.total_cache_read_tokens,
+            cache_write_tokens=result.total_cache_write_tokens,
+            latency_ms=result.total_latency_ms,
+            iteration_count=len(result.iterations),
+            status="error" if result.error else "success",
+        )
+        tts_used = _reply_with_audio(config, message.from_phone, answer) if voice else None
+        if tts_used:
+            provider, _, tts_model = tts_used.partition("/")
+            emit_usage_event(
+                client_id=user["client_id"],
+                user_id=user["user_id"],
+                session_id=session_id,
+                endpoint="/whatsapp/webhook",
+                provider=provider,
+                model=tts_model,
+                char_count=len(text_for_speech(answer)),
+                status="success",
+            )
+            return
+        send_text(config, message.from_phone, answer)
+        print(f"[whatsapp] resposta em texto enviada para ...{message.from_phone[-4:]}")
+    except Exception as exc:  # noqa: BLE001 - nada pode derrubar a tarefa
+        print(f"[whatsapp] erro ao responder {message.message_id}: {exc}")
+        try:
+            send_text(config, message.from_phone, WHATSAPP_TEXTS["erro"])
+        except Exception as send_exc:  # noqa: BLE001
+            print(f"[whatsapp] erro ao avisar do erro: {send_exc}")
+
+
+@app.get("/whatsapp/webhook")
+def whatsapp_verify(request: Request):
+    """Verificação do webhook pela Meta (hub.mode, hub.verify_token, hub.challenge)."""
+    if WHATSAPP_CONFIG is None:
+        raise HTTPException(status_code=404, detail="Canal do WhatsApp desligado")
+    params = request.query_params
+    if (
+        params.get("hub.mode") == "subscribe"
+        and params.get("hub.verify_token") == WHATSAPP_CONFIG.verify_token
+    ):
+        return PlainTextResponse(params.get("hub.challenge", ""))
+    raise HTTPException(status_code=403, detail="Token de verificação inválido")
+
+
+@app.post("/whatsapp/webhook")
+async def whatsapp_webhook(request: Request, background_tasks: BackgroundTasks):
+    """Recebe as mensagens da Meta. Responde 200 logo e trata em segundo plano."""
+    if WHATSAPP_CONFIG is None:
+        raise HTTPException(status_code=404, detail="Canal do WhatsApp desligado")
+    body = await request.body()
+    if not verify_signature(
+        WHATSAPP_CONFIG.app_secret, body, request.headers.get("X-Hub-Signature-256")
+    ):
+        raise HTTPException(status_code=401, detail="Assinatura inválida")
+    try:
+        payload = json.loads(body or b"{}")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="JSON inválido")
+    for message in parse_inbound(payload):
+        background_tasks.add_task(handle_whatsapp_message, message)
+    return {"status": "ok"}

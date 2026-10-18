@@ -5,13 +5,13 @@ description: Use para colocar no ar, com as contas da pessoa, o app que conversa
 
 # Colocar no ar o app que conversa com os dados do Power BI
 
-O resultado é o app da pessoa no ar, com login, chat, voz e visuais, respondendo direto do modelo semântico dela. Tudo fica nas contas dela: GitHub, Railway, Vercel, WorkOS, Claude e OpenAI.
+O resultado é o app da pessoa no ar, com login, chat, voz e visuais, respondendo direto do modelo semântico dela, e, se ela quiser, também pelo WhatsApp, por texto ou áudio. Tudo fica nas contas dela: GitHub, Railway, Vercel, WorkOS, Claude e OpenAI.
 
 A pessoa começa com duas coisas: o modelo semântico publicado no Power BI e o link do repositório template do app, que vai no e-mail de confirmação da compra e na área de membros: https://github.com/veridian-intelligence-ai/chatpbi. O resto nasce neste roteiro: as contas, os conectores no Claude, o repositório dela, a conexão com o Power BI, o contexto do modelo, o backend, o login, o frontend e os testes.
 
 ## Como conduzir
 
-1. Crie uma lista de tarefas com as 9 etapas e marque cada uma ao terminar. Uma etapa por vez, conferida antes da próxima:
+1. Crie uma lista de tarefas com as 9 etapas (e a 10, se a pessoa quiser o WhatsApp) e marque cada uma ao terminar. Uma etapa por vez, conferida antes da próxima:
    1. Modelo e acessos
    2. Contas e conectores
    3. Repositório da pessoa
@@ -21,6 +21,7 @@ A pessoa começa com duas coisas: o modelo semântico publicado no Power BI e o 
    7. Login com o WorkOS
    8. Frontend na Vercel
    9. Conferência de ponta a ponta
+   10. WhatsApp (opcional)
    As etapas 4 e 5 não dependem uma da outra: se a TI demorar na 4, faça a 5 antes.
 2. Fale em passos curtos e numerados, um por vez, dizendo o que a pessoa vai ver na tela. Na conversa, o nome é Power BI; as telas do Fabric (portal de administração, identidade do workspace) aparecem com o nome que têm.
 3. A pessoa não programa: o Claude escreve e testa o código, abre os pull requests e explica o que muda. O Claude faz o que dá pelos conectores e pelo repositório. A pessoa faz o que pede login, cartão, papel de administrador ou segredo:
@@ -31,7 +32,7 @@ A pessoa começa com duas coisas: o modelo semântico publicado no Power BI e o 
    - dar o ok antes de cada publicação em produção: ligar um serviço ao repositório, merge na `main`, primeiro deploy na Vercel.
 4. Segredo nunca passa pela conversa, pelo Git nem por arquivo: o segredo do app no Entra ID, as chaves do Claude, da OpenAI e do WorkOS e a URL do banco. Se um aparecer na conversa ou num commit, a pessoa troca na hora (apagar não basta).
 5. Com um navegador ligado ao Claude, ele pode abrir as telas do Entra ID e do Power BI e preencher o que não é segredo; a pessoa confirma o que dá acesso. Se a mesma tela falhar duas vezes, passe os passos para a pessoa fazer.
-6. Cada parte tem uma skill no repositório do app, em `.claude/skills/`: `conexao-power-bi`, `backend`, `login`, `frontend` e `repositorio`. Leia a da etapa antes de fazê-la: lá estão os detalhes e os erros de cada parte.
+6. Cada parte tem uma skill no repositório do app, em `.claude/skills/`: `conexao-power-bi`, `backend`, `login`, `frontend`, `repositorio` e `whatsapp`. Leia a da etapa antes de fazê-la: lá estão os detalhes e os erros de cada parte.
 
 ## Etapa 1. Modelo e acessos
 
@@ -41,7 +42,8 @@ Pergunte de uma vez, em lista curta:
 3. Se o modelo tem RLS (segurança por linha).
 4. Se a pessoa pode registrar apps e criar grupos no Entra ID, se é administradora do workspace e se é administradora do Fabric.
 5. Se quer a voz ao vivo (pede uma chave da OpenAI).
-6. De 10 a 20 perguntas que o time faz aos dados. Elas viram as sugestões, os exemplos de DAX e o teste final.
+6. Se quer perguntar também pelo WhatsApp, por texto ou áudio (pede um App da Meta, grátis no teste, e a mesma chave da OpenAI para o áudio).
+7. De 10 a 20 perguntas que o time faz aos dados. Elas viram as sugestões, os exemplos de DAX e o teste final.
 
 Pare e explique antes de seguir quando:
 - o modelo estiver em "Meu workspace": o service principal precisa de papel num workspace compartilhado, e a pessoa move ou republica o modelo;
@@ -52,7 +54,7 @@ Direct Lake pede capacidade Fabric no workspace (vale o teste ou uma F2) e o pas
 
 ## Etapa 2. Contas e conectores
 
-1. A pessoa cria as contas que faltam: GitHub, Railway, Vercel, WorkOS, Claude Console (platform.claude.com, para a chave da API do Claude, com crédito) e OpenAI Platform (platform.openai.com, só para a voz ao vivo).
+1. A pessoa cria as contas que faltam: GitHub, Railway, Vercel, WorkOS, Claude Console (platform.claude.com, para a chave da API do Claude, com crédito) e OpenAI Platform (platform.openai.com, para a voz ao vivo e o áudio do WhatsApp). Para o WhatsApp, também uma conta pessoal no Facebook, que abre o portfólio empresarial e o App da Meta na etapa 10.
 2. Os planos são escolha da pessoa, e cada serviço cobra pelo uso. O plano Hobby da Vercel é para uso pessoal; para a empresa, o Pro.
 3. No Claude, em Configurações, Conectores, a pessoa liga e autoriza com a conta dela: GitHub, Railway, Vercel e WorkOS.
 4. O Claude precisa ler o repositório do app e escrever no repositório da pessoa (branch e pull request). Esse acesso vem do GitHub ligado à sessão do Claude, com o app do GitHub instalado na conta da pessoa.
@@ -183,9 +185,21 @@ Detalhes na skill `frontend`:
 | Número errado na resposta | Contexto: falta regra, termo no glossário ou exemplo |
 | A voz não abre | Falta `OPENAI_API_KEY`, o endereço não é HTTPS ou o microfone foi negado |
 
+## Etapa 10. WhatsApp (opcional)
+
+Só se a pessoa disse sim na etapa 1, item 6, e com a etapa 9 conferida. Siga a skill `whatsapp`, do passo 1 ao 9 do teste, com o número de teste da Meta, sem custo:
+1. A pessoa cria o portfólio empresarial e o App da Meta com o WhatsApp, e cadastra o próprio celular como destinatário de teste.
+2. O Claude define no Railway o identificador do número, o texto de verificação e a lista de números; a pessoa cola o token e a chave secreta do App.
+3. A pessoa configura o webhook na Meta com o endereço da API, assina o campo `messages` e liga o App à conta do WhatsApp (`subscribed_apps`).
+4. Conferência: uma pergunta em texto, uma de seguimento em áudio, que volta como mensagem de voz, e "novo".
+5. Antes de usar no dia a dia, o token permanente do usuário do sistema (skill `whatsapp`, "Token permanente"): o temporário vence em 24 horas.
+
+Quem entra pelo WhatsApp vê o modelo inteiro, como no app. Libere só quem já tem usuário no app.
+
 ## Depois do ar
 
 - O segredo do Entra ID vence em 180 dias: a pessoa cria outro antes e cola no Railway.
+- WhatsApp: o token temporário vence em 24 horas; o permanente não vence. Cada resposta em áudio cobra a voz da OpenAI pelo uso.
 - Custos: cada pergunta usa de 2 a 6 chamadas à API do Claude; a voz ao vivo cobra por minuto na OpenAI; Railway, Vercel e WorkOS cobram pelo plano e pelo uso.
 - Mudou o modelo (medida ou tabela nova): atualize o pacote, rode os exemplos no modelo e suba o `PROMPT_VERSION`.
 - Atualização do app original: etapa 3, passo 5.
