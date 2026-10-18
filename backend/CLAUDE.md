@@ -17,9 +17,9 @@ O mesmo `Dockerfile` serve os dois serviços do Railway, com start commands dife
 
 ## Regras da API
 
-- Todo endpoint, menos `GET /health`, pede `Authorization: Bearer <token>`. `get_current_user()` valida o token em `auth.sessions`.
+- Todo endpoint, menos `GET /health` e `/whatsapp/webhook` (assinado pela Meta), pede `Authorization: Bearer <token>`. `get_current_user()` valida o token em `auth.sessions`.
 - `check_session_owner()` isola as conversas por usuário e cliente.
-- Os endpoints que custam API (`/chat/v2`, `/chat/voice`, `/voice/realtime/session`) passam por `check_rate_limit()`: 20 por minuto e 300 por hora por usuário.
+- Os endpoints que custam API (`/chat/v2`, `/chat/voice`, `/voice/realtime/session` e as mensagens do WhatsApp) passam por `check_rate_limit()`: 20 por minuto e 300 por hora por usuário.
 - Endpoints com I/O bloqueante (psycopg2, Anthropic, Power BI) são `def` síncronos. Só `/stt` e `/tts` são `async`.
 - `MODULE = "fabric"` fica fixo e vai em toda chamada ao `ConversationStore`.
 
@@ -59,6 +59,20 @@ O mesmo `Dockerfile` serve os dois serviços do Railway, com start commands dife
 - Sem `OPENAI_API_KEY`, a voz clássica usa `/stt` e `/tts` da ElevenLabs (`ELEVENLABS_API_KEY`).
 - O assistente se apresenta com o nome de `ASSISTANT_NAME` (padrão ChatPBI), no chat e na voz.
 - `GET /voice/config` diz ao frontend quais vozes estão ligadas.
+
+## WhatsApp
+
+- Canal opcional pela WhatsApp Cloud API da Meta (`api/whatsapp.py` e as rotas no fim de `api/main.py`). Passo a passo na skill `whatsapp`.
+- `GET /whatsapp/webhook` é a verificação da Meta (`hub.verify_token`). `POST /whatsapp/webhook` confere o `X-Hub-Signature-256` com `WHATSAPP_APP_SECRET`, devolve 200 logo e trata cada mensagem em segundo plano. Essas duas rotas não pedem `Authorization`: quem autentica é a assinatura da Meta.
+- Liga só com `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_VERIFY_TOKEN` e `WHATSAPP_APP_SECRET`. Sem elas, as rotas dão 404.
+- Só respondem os números de `WHATSAPP_ALLOWED_NUMBERS` (`numero=email`), ligados a um usuário ativo de `auth.users`. Número fora da lista é ignorado.
+- Uma conversa por número (`session_id` `wa-<número>`), no mesmo `ConversationStore`, com o mesmo rate limit dos outros canais. "novo" limpa a conversa.
+- O histórico vai ao modelo só com o texto de cada resposta (`history_for_model`), sem o JSON salvo no banco, e a resposta passa por `unwrap_answer`: senão o modelo copia o JSON e a pessoa recebe o texto cru.
+- Áudio: baixa a mídia da Meta e transcreve com a `OPENAI_API_KEY` (`OPENAI_TRANSCRIBE_MODEL`). Sem a chave, responde só a texto.
+- Pergunta em áudio recebe resposta em áudio: o mesmo `WHATSAPP_MODEL` do texto, mais o bloco de voz (só o formato), e a voz pela OpenAI (`gpt-4o-mini-tts`, voz `WHATSAPP_TTS_VOICE`, padrão `coral`) ou pela ElevenLabs (`WHATSAPP_TTS_PROVIDER=elevenlabs`, padrão `eleven_v4` com queda para `eleven_multilingual_v2`). O MP3 vira OGG/Opus com o `ffmpeg` da imagem (Dockerfile) e sobe pela `/{phone_number_id}/media`. Se a voz falhar, vai em texto.
+- O bloco do WhatsApp pede continuidade (pergunta de seguimento usa o contexto da anterior) e observação tirada dos números, e proíbe frase óbvia ou condicional, causa sem dado e conselho genérico.
+- `ai.whatsapp_inbound` guarda o id de cada mensagem tratada, porque a Meta reenvia o webhook. A tabela é criada no arranque, só com o canal ligado.
+- O service principal vê o modelo inteiro: o canal serve para modelo sem RLS.
 
 ## Orquestrador
 

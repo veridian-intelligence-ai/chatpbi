@@ -10,15 +10,18 @@ App que conversa com os dados de um modelo semântico do Power BI, com chat, voz
 4. Frontend na Vercel (`frontend/`): Vite, React e TypeScript, com as telas de conversa, voz e visuais. Skill: `.claude/skills/frontend`.
 5. Login com o WorkOS: e-mail e senha do WorkOS, e só entra quem está cadastrado no app (`auth.users`). Skill: `.claude/skills/login`.
 
+Canal opcional: o WhatsApp, pela API oficial da Meta, para perguntar ao modelo por texto ou áudio e receber a resposta em texto ou em áudio. Skill: `.claude/skills/whatsapp`.
+
 Para montar ou mudar uma parte, siga a skill dela. Para montar o app inteiro numa conta nova, partindo só do modelo semântico e deste repositório, siga a skill `.claude/skills/app-chat-power-bi-no-ar`.
 
 ## Onde está cada coisa
 
 | Caminho | O que tem |
 |---|---|
-| `backend/api/main.py` | A API: `/chat/v2`, `/chat/voice`, `/voice/*`, `/suggestions`, `/model`, conversas. |
+| `backend/api/main.py` | A API: `/chat/v2`, `/chat/voice`, `/voice/*`, `/suggestions`, `/model`, conversas e `/whatsapp/webhook`. |
 | `backend/api/orchestrator.py` | O ciclo Claude → `execute_dax` → Power BI → Claude. |
 | `backend/api/prompts_fabric.py` | O prompt (com cache), a partir do pacote do modelo ativo. |
+| `backend/api/whatsapp.py` | O canal do WhatsApp: assinatura do webhook, leitura das mensagens, envio, áudio e números autorizados. As rotas ficam em `main.py`. |
 | `backend/api/realtime_voice.py` | A sessão da voz ao vivo (OpenAI Realtime) e a ferramenta `consultar_dados`. |
 | `backend/api/semantic_models/<modelo>/` | O contexto de cada modelo: medidas, tabelas, regras, DAX validado, sugestões e rótulos. |
 | `backend/auth_server.py` | O login (WorkOS) e as sessões. |
