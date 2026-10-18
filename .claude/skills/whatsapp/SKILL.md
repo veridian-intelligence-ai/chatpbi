@@ -42,9 +42,10 @@ Sem as quatro primeiras, o canal fica desligado e `/whatsapp/webhook` responde 4
 
 ## Passo a passo do teste (número de teste da Meta, sem custo)
 
-Antes de começar: o app já está no ar (backend, login e frontend), a pessoa tem um usuário ativo nele e uma conta pessoal no Facebook. Cada passo diz quem faz.
+Antes de começar: o app já está no ar (backend, login e frontend) e a pessoa tem um usuário ativo nele. Da Meta, parta do pressuposto de que ela não tem nada além de uma conta pessoal no Facebook: sem conta de desenvolvedor, sem portfólio empresarial, sem App e sem número. Cada passo diz quem faz.
 
-1. **Portfólio empresarial (pessoa).** Em business.facebook.com, criar ou escolher o portfólio empresarial que vai ser dono do App e do número.
+0. **Voz da resposta (pergunte antes).** OpenAI, que já está no app e não pede conta nova, ou ElevenLabs, com vozes mais naturais, que pede uma conta em elevenlabs.io e um plano escolhido pela pessoa. Com ElevenLabs: a pessoa cria a conta, gera a API key e cola em `ELEVENLABS_API_KEY` no Railway, escolhe a voz na Voice Library e passa o Voice ID; o Claude define `WHATSAPP_TTS_PROVIDER=elevenlabs` e `WHATSAPP_TTS_VOICE`.
+1. **Conta de desenvolvedor e portfólio (pessoa).** Em developers.facebook.com, "Começar", entrar com o Facebook e confirmar o telefone e o e-mail que a Meta pedir: isso cria a conta de desenvolvedor. Depois, em business.facebook.com, "Criar portfólio", com o nome da empresa e o e-mail de trabalho. Se a pessoa já tiver um portfólio, usa o dela.
 2. **App da Meta (pessoa, com a IA guiando).** Em developers.facebook.com > Meus apps > Criar app, escolher o caso de uso "Conectar-se com clientes pelo WhatsApp" (ou o tipo Empresa) e ligar ao portfólio do passo 1. A Meta cria uma conta do WhatsApp Business de teste e um número de teste. Aceitar os termos é decisão da pessoa.
 3. **Destinatário de teste (pessoa).** Em WhatsApp > Configuração da API, no campo "Para", clicar em "Gerenciar lista de números" e adicionar o celular da pessoa. A Meta manda um código pelo WhatsApp para confirmar. O número de teste só manda mensagem para até 5 números dessa lista.
 4. **Anotar (pessoa passa à IA).** Na mesma tela: o "Identificador do número de telefone" (vai em `WHATSAPP_PHONE_NUMBER_ID`) e o "Identificador da conta do WhatsApp Business" (WABA, usado no passo 8). Os dois não são segredo.
