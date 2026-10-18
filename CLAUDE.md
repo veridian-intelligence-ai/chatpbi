@@ -10,7 +10,7 @@ App que conversa com os dados de um modelo semântico do Power BI, com chat, voz
 4. Frontend na Vercel (`frontend/`): Vite, React e TypeScript, com as telas de conversa, voz e visuais. Skill: `.claude/skills/frontend`.
 5. Login com o WorkOS: e-mail e senha do WorkOS, e só entra quem está cadastrado no app (`auth.users`). Skill: `.claude/skills/login`.
 
-Canal opcional: o WhatsApp, pela API oficial da Meta, para perguntar ao modelo por texto ou áudio e receber a resposta em texto ou em áudio. Skill: `.claude/skills/whatsapp`.
+Canal do WhatsApp, pela API oficial da Meta, para perguntar ao modelo por texto ou áudio e receber a resposta em texto ou em áudio. Skill: `.claude/skills/whatsapp`. Ele pode vir junto com o app web ou sozinho: no caminho só pelo WhatsApp, ficam de fora o login com o WorkOS e o frontend na Vercel (a skill `app-chat-power-bi-no-ar` conduz os dois caminhos).
 
 Para montar ou mudar uma parte, siga a skill dela. Para montar o app inteiro numa conta nova, partindo só do modelo semântico e deste repositório, siga a skill `.claude/skills/app-chat-power-bi-no-ar`.
 

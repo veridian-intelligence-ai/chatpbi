@@ -5,31 +5,36 @@ description: Use para colocar no ar, com as contas da pessoa, o app que conversa
 
 # Colocar no ar o app que conversa com os dados do Power BI
 
-O resultado é o app da pessoa no ar, com login, chat, voz e visuais, respondendo direto do modelo semântico dela, e, se ela quiser, também pelo WhatsApp, por texto ou áudio. Tudo fica nas contas dela: GitHub, Railway, Vercel, WorkOS, Claude e OpenAI.
+O resultado é a pessoa perguntando ao modelo semântico dela e recebendo a resposta direto do modelo. Há dois caminhos, e a pessoa escolhe na etapa 1:
 
-A pessoa começa com duas coisas: o modelo semântico publicado no Power BI e o link do repositório template do app, que vai no e-mail de confirmação da compra e na área de membros: https://github.com/veridian-intelligence-ai/chatpbi. O resto nasce neste roteiro: as contas, os conectores no Claude, o repositório dela, a conexão com o Power BI, o contexto do modelo, o backend, o login, o frontend e os testes.
+- **Só pelo WhatsApp:** perguntas por texto ou áudio no WhatsApp, com resposta em texto ou em áudio. Menos ferramentas: GitHub, Railway, Claude, OpenAI e Meta. Sem a Vercel e sem o WorkOS.
+- **App web e WhatsApp:** o app com login, chat, voz ao vivo e visuais e, se a pessoa quiser, também o WhatsApp. Ferramentas: GitHub, Railway, Vercel, WorkOS, Claude e OpenAI, e a Meta para o WhatsApp.
+
+Tudo fica nas contas da pessoa. O caminho só pelo WhatsApp pode ganhar o app web depois: basta fazer as etapas 7 e 8 e a conferência do app.
+
+A pessoa começa com duas coisas: o modelo semântico publicado no Power BI e o link do repositório template do app, que vai no e-mail de confirmação da compra e na área de membros: https://github.com/veridian-intelligence-ai/chatpbi. O resto nasce neste roteiro: as contas, os conectores no Claude, o repositório dela, a conexão com o Power BI, o contexto do modelo, o backend e os testes, e, no caminho do app web, o login e o frontend.
 
 ## Como conduzir
 
-1. Crie uma lista de tarefas com as 9 etapas (e a 10, se a pessoa quiser o WhatsApp) e marque cada uma ao terminar. Uma etapa por vez, conferida antes da próxima:
+1. Crie uma lista de tarefas com as etapas do caminho escolhido e marque cada uma ao terminar. Uma etapa por vez, conferida antes da próxima:
    1. Modelo e acessos
    2. Contas e conectores
    3. Repositório da pessoa
    4. Conexão com o Power BI
    5. Contexto do modelo
    6. Backend no Railway
-   7. Login com o WorkOS
-   8. Frontend na Vercel
-   9. Conferência de ponta a ponta
-   10. WhatsApp (opcional)
-   As etapas 4 e 5 não dependem uma da outra: se a TI demorar na 4, faça a 5 antes.
+   7. Login com o WorkOS (só no app web)
+   8. Frontend na Vercel (só no app web)
+   9. Conferência de ponta a ponta (só no app web)
+   10. WhatsApp
+   No caminho só pelo WhatsApp, a ordem é 1 a 6 e depois a 10, e a conferência de ponta a ponta é a da etapa 10. No caminho do app web, a 10 é opcional e vem depois da 9. As etapas 4 e 5 não dependem uma da outra: se a TI demorar na 4, faça a 5 antes.
 2. Fale em passos curtos e numerados, um por vez, dizendo o que a pessoa vai ver na tela. Na conversa, o nome é Power BI; as telas do Fabric (portal de administração, identidade do workspace) aparecem com o nome que têm.
 3. A pessoa não programa: o Claude escreve e testa o código, abre os pull requests e explica o que muda. O Claude faz o que dá pelos conectores e pelo repositório. A pessoa faz o que pede login, cartão, papel de administrador ou segredo:
    - criar as contas e escolher os planos (o Claude não cria conta nem digita senha);
    - autorizar os conectores e os apps do GitHub;
    - as ações de administrador no Entra ID e no portal do Fabric, ou pedir à TI;
    - criar cada segredo e colar direto na variável do Railway;
-   - dar o ok antes de cada publicação em produção: ligar um serviço ao repositório, merge na `main`, primeiro deploy na Vercel.
+   - dar o ok antes de cada publicação em produção: ligar um serviço ao repositório, merge na `main` e, no app web, o primeiro deploy na Vercel.
 4. Segredo nunca passa pela conversa, pelo Git nem por arquivo: o segredo do app no Entra ID, as chaves do Claude, da OpenAI e do WorkOS e a URL do banco. Se um aparecer na conversa ou num commit, a pessoa troca na hora (apagar não basta).
 5. Com um navegador ligado ao Claude, ele pode abrir as telas do Entra ID e do Power BI e preencher o que não é segredo; a pessoa confirma o que dá acesso. Se a mesma tela falhar duas vezes, passe os passos para a pessoa fazer.
 6. Cada parte tem uma skill no repositório do app, em `.claude/skills/`: `conexao-power-bi`, `backend`, `login`, `frontend`, `repositorio` e `whatsapp`. Leia a da etapa antes de fazê-la: lá estão os detalhes e os erros de cada parte.
@@ -37,12 +42,13 @@ A pessoa começa com duas coisas: o modelo semântico publicado no Power BI e o 
 ## Etapa 1. Modelo e acessos
 
 Pergunte de uma vez, em lista curta:
+0. O caminho: só pelo WhatsApp ou app web e WhatsApp. Se a pessoa não souber, recomende começar só pelo WhatsApp: menos contas, menos etapas, e o app web pode vir depois.
 1. O nome do workspace e do modelo semântico.
 2. O modo do modelo: Import, DirectQuery ou Direct Lake. Se a pessoa não souber, a leitura do modelo (etapa 5) mostra.
 3. Se o modelo tem RLS (segurança por linha).
 4. Se a pessoa pode registrar apps e criar grupos no Entra ID, se é administradora do workspace e se é administradora do Fabric.
-5. Se quer a voz ao vivo (pede uma chave da OpenAI).
-6. Se quer perguntar também pelo WhatsApp, por texto ou áudio (pede um App da Meta, grátis no teste, e a mesma chave da OpenAI para o áudio).
+5. No app web: se quer a voz ao vivo (pede uma chave da OpenAI).
+6. No app web: se quer perguntar também pelo WhatsApp, por texto ou áudio (pede um App da Meta, grátis no teste, e a mesma chave da OpenAI para o áudio). No caminho só pelo WhatsApp, a resposta é sempre sim.
 7. De 10 a 20 perguntas que o time faz aos dados. Elas viram as sugestões, os exemplos de DAX e o teste final.
 
 Pare e explique antes de seguir quando:
@@ -54,11 +60,13 @@ Direct Lake pede capacidade Fabric no workspace (vale o teste ou uma F2) e o pas
 
 ## Etapa 2. Contas e conectores
 
-1. A pessoa cria as contas que faltam: GitHub, Railway, Vercel, WorkOS, Claude Console (platform.claude.com, para a chave da API do Claude, com crédito) e OpenAI Platform (platform.openai.com, para a voz ao vivo e o áudio do WhatsApp). Para o WhatsApp, também uma conta pessoal no Facebook, que abre o portfólio empresarial e o App da Meta na etapa 10.
+1. A pessoa cria as contas que faltam:
+   - nos dois caminhos: GitHub, Railway, Claude Console (platform.claude.com, para a chave da API do Claude, com crédito) e OpenAI Platform (platform.openai.com, para o áudio do WhatsApp e a voz ao vivo). Para o WhatsApp, também uma conta pessoal no Facebook, que abre o portfólio empresarial e o App da Meta na etapa 10;
+   - só no app web: Vercel e WorkOS.
 2. Os planos são escolha da pessoa, e cada serviço cobra pelo uso. O plano Hobby da Vercel é para uso pessoal; para a empresa, o Pro.
-3. No Claude, em Configurações, Conectores, a pessoa liga e autoriza com a conta dela: GitHub, Railway, Vercel e WorkOS.
+3. No Claude, em Configurações, Conectores, a pessoa liga e autoriza com a conta dela: GitHub e Railway e, no app web, Vercel e WorkOS.
 4. O Claude precisa ler o repositório do app e escrever no repositório da pessoa (branch e pull request). Esse acesso vem do GitHub ligado à sessão do Claude, com o app do GitHub instalado na conta da pessoa.
-5. Confira cada conector com uma leitura: os workspaces no Railway, os times na Vercel, quem está conectado no WorkOS e os repositórios no GitHub. Se um falhar, a pessoa religa antes de seguir.
+5. Confira cada conector com uma leitura: os workspaces no Railway, os repositórios no GitHub e, no app web, os times na Vercel e quem está conectado no WorkOS. Se um falhar, a pessoa religa antes de seguir.
 
 ## Etapa 3. Repositório da pessoa
 
@@ -135,18 +143,18 @@ O DAX dos exemplos segue o pacote original: começa com EVALUATE (ou DEFINE); ag
 Detalhes na skill `backend`. Pelo conector do Railway:
 1. Projeto novo com o template `postgres`.
 2. Serviço `backend` (API): repositório da pessoa, branch `main`, diretório raiz `/backend`, healthcheck `/health` e domínio público.
-3. Serviço `auth` (login): mesmo repositório e diretório, start command `sh -c 'cd /app && uvicorn auth_server:app --host 0.0.0.0 --port ${PORT:-8080}'`, `PORT=8080`, healthcheck `/health` e domínio público na porta 8080.
+3. Serviço `auth` (login): também no caminho só pelo WhatsApp, porque é ele que cria o esquema `auth` e os usuários das `SEED_*`, sem precisar do WorkOS. Mesmo repositório e diretório, start command `sh -c 'cd /app && uvicorn auth_server:app --host 0.0.0.0 --port ${PORT:-8080}'`, `PORT=8080`, healthcheck `/health` e domínio público na porta 8080.
 4. As variáveis entram antes de ligar o repositório, porque o primeiro deploy já precisa delas:
-   - nos dois serviços: `DATABASE_URL=${{Postgres.DATABASE_URL}}` (com o nome do serviço do banco) e `ALLOWED_ORIGINS` (`http://localhost:8080` por enquanto; o domínio da Vercel entra na etapa 8);
+   - nos dois serviços: `DATABASE_URL=${{Postgres.DATABASE_URL}}` (com o nome do serviço do banco) e `ALLOWED_ORIGINS` (`http://localhost:8080`; no app web, o domínio da Vercel entra na etapa 8);
    - na API: `POWERBI_TENANT_ID`, `POWERBI_CLIENT_ID`, `POWERBI_WORKSPACE_ID` e `POWERBI_DATASET_ID`; as referências `FABRIC_TENANT_ID=${{POWERBI_TENANT_ID}}`, `FABRIC_CLIENT_ID=${{POWERBI_CLIENT_ID}}`, `FABRIC_CLIENT_SECRET=${{POWERBI_CLIENT_SECRET}}`, `FABRIC_WORKSPACE_ID=${{POWERBI_WORKSPACE_ID}}` e `FABRIC_DEFAULT_DATASET_ID=${{POWERBI_DATASET_ID}}`; `SEMANTIC_MODEL=<pacote>`; `ANTHROPIC_MODEL` e `ANTHROPIC_VOICE_MODEL`, com os valores do `backend/.env.example`;
-   - no login: `WORKOS_CLIENT_ID` (etapa 7), `API_PUBLIC_URL` (o domínio público da API; opcional, porque o frontend usa o `VITE_API_BASE_URL`) e o primeiro admin: `SEED_CLIENT_SLUG`, `SEED_CLIENT_NAME`, `SEED_ADMIN_EMAIL` (o e-mail da pessoa) e `SEED_ADMIN_NAME`.
+   - no login: o primeiro admin, `SEED_CLIENT_SLUG`, `SEED_CLIENT_NAME`, `SEED_ADMIN_EMAIL` (o e-mail da pessoa) e `SEED_ADMIN_NAME`, e, se outras pessoas forem perguntar pelo WhatsApp, `SEED_MEMBER_EMAILS` (os e-mails delas, separados por vírgula). Só no app web: `WORKOS_CLIENT_ID` (etapa 7) e `API_PUBLIC_URL` (o domínio público da API; opcional, porque o frontend usa o `VITE_API_BASE_URL`).
 5. Os segredos, que a pessoa cria e cola em Variables do serviço:
-   - na API: `POWERBI_CLIENT_SECRET` (Entra ID, Certificates & secrets, New client secret, validade de 180 dias: anotar a data para trocar antes), `ANTHROPIC_API_KEY` e, para a voz ao vivo, `OPENAI_API_KEY`;
-   - no login: `WORKOS_API_KEY`.
+   - na API: `POWERBI_CLIENT_SECRET` (Entra ID, Certificates & secrets, New client secret, validade de 180 dias: anotar a data para trocar antes), `ANTHROPIC_API_KEY` e `OPENAI_API_KEY` (áudio do WhatsApp e voz ao vivo);
+   - no login, só no app web: `WORKOS_API_KEY`.
 6. Ligar cada serviço ao repositório publica em produção: peça o ok. Se a ferramenta recusar, a pessoa liga no painel, em Settings, Source, Connect Repo.
 7. Confira pelo conector: deploy com sucesso, `/health` respondendo nos dois domínios e os logs sem erro. O primeiro arranque cria os esquemas `auth` e `ai` e o admin das `SEED_*`.
 
-## Etapa 7. Login com o WorkOS
+## Etapa 7. Login com o WorkOS (só no app web)
 
 Detalhes na skill `login`:
 1. No WorkOS, o ambiente Staging para começar. Em Authentication, "Email + Password" ligado. O Client ID vai para `WORKOS_CLIENT_ID` no serviço `auth`.
@@ -154,7 +162,7 @@ Detalhes na skill `login`:
 3. Em Redirects, "Password reset URL": `https://<domínio do frontend>/reset-password` (o domínio sai na etapa 8).
 4. A pessoa precisa de usuário no WorkOS com o mesmo e-mail de `SEED_ADMIN_EMAIL`, com senha e e-mail verificado: pelo convite do WorkOS (manda e-mail, então confirme antes) ou por "Esqueceu a senha?" na tela do app.
 
-## Etapa 8. Frontend na Vercel
+## Etapa 8. Frontend na Vercel (só no app web)
 
 Detalhes na skill `frontend`:
 1. Projeto ligado ao repositório da pessoa, diretório raiz `frontend` (o `vercel.json` já define o build).
@@ -163,7 +171,9 @@ Detalhes na skill `frontend`:
 4. De volta ao Railway: o domínio da Vercel (`https://<projeto>.vercel.app`, sem barra) em `ALLOWED_ORIGINS` dos dois serviços. E a URL de troca de senha no WorkOS (etapa 7, passo 3).
 5. Opcional: o nome do app, que vem como ChatPBI. Ele fica em `frontend/src/config/app.ts`, no título e nas metas de `frontend/index.html`, em `frontend/public/manifest.json` e na variável `ASSISTANT_NAME` do serviço `backend`, que é o nome com que o assistente se apresenta no chat e na voz. A logo fica em `frontend/src/components/brand/Logo.tsx` e os ícones em `frontend/public/`. Por pull request.
 
-## Etapa 9. Conferência de ponta a ponta
+## Etapa 9. Conferência de ponta a ponta (só no app web)
+
+No caminho só pelo WhatsApp, a conferência é a da etapa 10, com o teste de acerto do passo 4 abaixo feito pelo WhatsApp.
 
 1. A pessoa entra com o e-mail do admin.
 2. As sugestões iniciais aparecem, sem aviso de contexto.
@@ -185,22 +195,22 @@ Detalhes na skill `frontend`:
 | Número errado na resposta | Contexto: falta regra, termo no glossário ou exemplo |
 | A voz não abre | Falta `OPENAI_API_KEY`, o endereço não é HTTPS ou o microfone foi negado |
 
-## Etapa 10. WhatsApp (opcional)
+## Etapa 10. WhatsApp
 
-Só se a pessoa disse sim na etapa 1, item 6, e com a etapa 9 conferida. Siga a skill `whatsapp`, do passo 1 ao 9 do teste, com o número de teste da Meta, sem custo:
+No caminho só pelo WhatsApp, vem logo depois da etapa 6. No app web, só se a pessoa disse sim na etapa 1, item 6, e com a etapa 9 conferida. Siga a skill `whatsapp`, do passo 1 ao 9 do teste, com o número de teste da Meta, sem custo:
 1. A pessoa cria o portfólio empresarial e o App da Meta com o WhatsApp, e cadastra o próprio celular como destinatário de teste.
 2. O Claude define no Railway o identificador do número, o texto de verificação e a lista de números; a pessoa cola o token e a chave secreta do App.
 3. A pessoa configura o webhook na Meta com o endereço da API, assina o campo `messages` e liga o App à conta do WhatsApp (`subscribed_apps`).
-4. Conferência: uma pergunta em texto, uma de seguimento em áudio, que volta como mensagem de voz, e "novo".
+4. Conferência: uma pergunta em texto, uma de seguimento em áudio, que volta como mensagem de voz, e "novo". No caminho só pelo WhatsApp, também o teste de acerto: três números do WhatsApp comparados com o relatório do Power BI que o time já usa, com o mesmo filtro, e o DAX de cada um nos logs do `backend`, entre `[DAX_QUERY]` e `[/DAX_QUERY]`.
 5. Antes de usar no dia a dia, o token permanente do usuário do sistema (skill `whatsapp`, "Token permanente"): o temporário vence em 24 horas.
 
-Quem entra pelo WhatsApp vê o modelo inteiro, como no app. Libere só quem já tem usuário no app.
+Quem entra pelo WhatsApp vê o modelo inteiro, como no app. Libere só quem tem usuário ativo: no app web, pela skill `login`; no caminho só pelo WhatsApp, pelo `SEED_MEMBER_EMAILS` do serviço `auth`, com o número em `WHATSAPP_ALLOWED_NUMBERS`.
 
 ## Depois do ar
 
 - O segredo do Entra ID vence em 180 dias: a pessoa cria outro antes e cola no Railway.
 - WhatsApp: o token temporário vence em 24 horas; o permanente não vence. Cada resposta em áudio cobra a voz da OpenAI pelo uso.
-- Custos: cada pergunta usa de 2 a 6 chamadas à API do Claude; a voz ao vivo cobra por minuto na OpenAI; Railway, Vercel e WorkOS cobram pelo plano e pelo uso.
+- Custos: cada pergunta usa de 2 a 6 chamadas à API do Claude; o áudio do WhatsApp e a voz ao vivo cobram pelo uso na OpenAI; o Railway cobra pelo plano e pelo uso e, no app web, a Vercel e o WorkOS também.
 - Mudou o modelo (medida ou tabela nova): atualize o pacote, rode os exemplos no modelo e suba o `PROMPT_VERSION`.
 - Atualização do app original: etapa 3, passo 5.
 

@@ -128,6 +128,7 @@ def _seed(conn, **env):
         "SEED_CLIENT_NAME": "Empresa Demo",
         "SEED_ADMIN_EMAIL": "admin@example.com",
         "SEED_ADMIN_NAME": "Admin Demo",
+        "SEED_MEMBER_EMAILS": [],
     }
     values.update(env)
     with patch.multiple(auth_server, **values), \
@@ -164,4 +165,19 @@ def test_seed_creates_client_and_active_admin():
 def test_seed_is_idempotent_when_user_exists():
     conn = _Conn(user_exists=True)
     assert _seed(conn) is False
+    assert conn.commits == 1
+
+
+def test_seed_creates_member_emails_as_active_members():
+    conn = _Conn()
+    _seed(conn, SEED_MEMBER_EMAILS=["ana@example.com", "ADMIN@example.com", "rui@example.com"])
+    inserts = [e for e in conn._cursor.executed if e[0].startswith("INSERT INTO auth.users")]
+    # o admin e os dois membros; o e-mail do admin na lista não entra de novo
+    assert len(inserts) == 3
+    members = [e for e in inserts if "'member', 'active'" in e[0]]
+    assert [m[1] for m in members] == [
+        (7, "ana@example.com", "ana@example.com"),
+        (7, "rui@example.com", "rui@example.com"),
+    ]
+    assert all("WHERE NOT EXISTS" in m[0] for m in members)
     assert conn.commits == 1

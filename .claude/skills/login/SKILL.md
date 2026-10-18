@@ -11,7 +11,7 @@ A tela do app manda e-mail e senha para o serviço `auth` do backend, que confer
 
 1. **Projeto e ambiente** (conector do WorkOS). Projeto `app-chat-power-bi` com o ambiente de teste (Staging). Anote o Client ID.
 2. **Variáveis do serviço `auth`** (skill `backend`): `WORKOS_CLIENT_ID` e, colada pela pessoa, `WORKOS_API_KEY`.
-3. **Primeiro admin.** `SEED_ADMIN_EMAIL` (e `SEED_CLIENT_SLUG`, `SEED_CLIENT_NAME`, `SEED_ADMIN_NAME`) no serviço `auth`: o primeiro arranque cadastra essa pessoa no app.
+3. **Primeiro admin.** `SEED_ADMIN_EMAIL` (e `SEED_CLIENT_SLUG`, `SEED_CLIENT_NAME`, `SEED_ADMIN_NAME`) no serviço `auth`: o primeiro arranque cadastra essa pessoa no app. `SEED_MEMBER_EMAILS` (e-mails separados por vírgula) cadastra outras pessoas como membros ativos, a cada arranque, sem repetir quem já existe.
 4. **Usuário no WorkOS.** A pessoa precisa de conta com senha no ambiente (convite do WorkOS ou cadastro). Sem senha, ela usa "Esqueceu a senha?" na tela do app.
 5. **Troca de senha.** No painel do WorkOS, Redirects, "Password reset URL": `https://<domínio do frontend>/reset-password`.
 
