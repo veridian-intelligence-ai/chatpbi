@@ -42,7 +42,7 @@ Sem as quatro primeiras, o canal fica desligado e `/whatsapp/webhook` responde 4
 
 ## Passo a passo do teste (número de teste da Meta, sem custo)
 
-Antes de começar: o app já está no ar (backend, login e frontend) e a pessoa tem um usuário ativo nele. Da Meta, parta do pressuposto de que ela não tem nada além de uma conta pessoal no Facebook: sem conta de desenvolvedor, sem portfólio empresarial, sem App e sem número. Cada passo diz quem faz.
+Antes de começar: o backend está no ar, com os dois serviços no Railway, e a pessoa tem um usuário ativo em `auth.users` (o admin das `SEED_*`). O login e o frontend só são precisos para o app web: no caminho só pelo WhatsApp (skill `app-chat-power-bi-no-ar`), eles ficam de fora. Da Meta, parta do pressuposto de que ela não tem nada além de uma conta pessoal no Facebook: sem conta de desenvolvedor, sem portfólio empresarial, sem App e sem número. Cada passo diz quem faz.
 
 0. **Voz da resposta (pergunte antes).** OpenAI, que já está no app e não pede conta nova, ou ElevenLabs, com vozes mais naturais, que pede uma conta em elevenlabs.io e um plano escolhido pela pessoa. Com ElevenLabs: a pessoa cria a conta, gera a API key e cola em `ELEVENLABS_API_KEY` no Railway, escolhe a voz na Voice Library e passa o Voice ID; o Claude define `WHATSAPP_TTS_PROVIDER=elevenlabs` e `WHATSAPP_TTS_VOICE`.
 1. **Conta de desenvolvedor e portfólio (pessoa).** Em developers.facebook.com, "Começar", entrar com o Facebook e confirmar o telefone e o e-mail que a Meta pedir: isso cria a conta de desenvolvedor. Depois, em business.facebook.com, "Criar portfólio", com o nome da empresa e o e-mail de trabalho. Se a pessoa já tiver um portfólio, usa o dela.
@@ -73,8 +73,8 @@ O token temporário vale 24 horas. Depois disso, a Meta recusa o envio (log `env
 
 ## Mais pessoas e número próprio
 
-- **Liberar alguém:** no teste, a pessoa adiciona o número na lista de destinatários da Meta (passo 3). Em qualquer caso, a IA acrescenta `numero=email` em `WHATSAPP_ALLOWED_NUMBERS`, e o e-mail precisa ser de um usuário ativo do app (skill `login`). Lembrar a pessoa de que quem entra vê o modelo inteiro.
-- **Número próprio** (mais de 5 pessoas ou uso no dia a dia): um número que não esteja em nenhum WhatsApp, verificado na conta do WhatsApp Business, com o nome de exibição aprovado pela Meta e uma forma de pagamento na conta. Segundo a tabela de preços da Meta, mensagem que não é template, enviada dentro da janela de 24 horas depois da mensagem da pessoa, não é cobrada, e é assim que este canal responde. Conferir a tabela atual antes de passar preço ao cliente.
+- **Liberar alguém:** no teste, a pessoa adiciona o número na lista de destinatários da Meta (passo 3). Em qualquer caso, a IA acrescenta `numero=email` em `WHATSAPP_ALLOWED_NUMBERS`, e o e-mail precisa ser de um usuário ativo do app: no caminho com o app web, pela skill `login`; no caminho só pelo WhatsApp, a IA acrescenta o e-mail em `SEED_MEMBER_EMAILS`, no serviço `auth`, e o reinício do serviço cadastra a pessoa. Lembrar a pessoa de que quem entra vê o modelo inteiro.
+- **Número próprio** (mais de 5 pessoas ou uso no dia a dia): um número que não esteja em nenhum WhatsApp, verificado na conta do WhatsApp Business, com o nome de exibição aprovado pela Meta e uma forma de pagamento na conta. Desde 01/10/2026, segundo a Meta, cada número tem 1.000 mensagens de serviço por mês sem custo (as respostas enviadas nas 24 horas depois da mensagem da pessoa, que é como este canal responde), e a Meta cobra a partir da 1.001ª. Conferir a tabela atual antes de passar preço ao cliente.
 
 ## Mudar a voz da resposta
 

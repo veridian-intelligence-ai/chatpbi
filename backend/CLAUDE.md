@@ -26,7 +26,8 @@ O mesmo `Dockerfile` serve os dois serviços do Railway, com start commands dife
 ## Regras do login
 
 - O login é do WorkOS, sem redirecionar: a tela do app manda e-mail e senha para `/auth/workos/password-login`. Só entra quem existe no WorkOS com e-mail verificado e está em `auth.users` (403 `workos_user_not_provisioned` se não estiver).
-- Instalação nova: com `SEED_ADMIN_EMAIL`, o arranque cria o cliente `SEED_CLIENT_SLUG` e esse usuário como admin ativo (idempotente).
+- Instalação nova: com `SEED_ADMIN_EMAIL`, o arranque cria o cliente `SEED_CLIENT_SLUG` e esse usuário como admin ativo (idempotente). Os e-mails de `SEED_MEMBER_EMAILS` (vírgula) entram como membros ativos do mesmo cliente.
+- Caminho só pelo WhatsApp: o serviço `auth` sobe sem as variáveis do WorkOS, só para criar os esquemas e os usuários das `SEED_*`. O WorkOS só é chamado nos endpoints de login.
 - `AUTH_SECRET_KEY` é opcional. Sem ela, os endpoints `/admin/*` ficam desligados (403).
 - `API_PUBLIC_URL` é opcional (o nome antigo, `VERIDIAN_API_URL`, continua valendo): o login devolve esse endereço como `api_url`, mas o frontend usa primeiro o `VITE_API_BASE_URL` do build.
 - O link do e-mail de troca de senha é o "Password reset URL" do WorkOS (`https://<frontend>/reset-password`).

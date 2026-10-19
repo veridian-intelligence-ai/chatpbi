@@ -81,6 +81,13 @@ SEED_CLIENT_SLUG = os.getenv("SEED_CLIENT_SLUG", "").strip()
 SEED_CLIENT_NAME = os.getenv("SEED_CLIENT_NAME", "").strip()
 SEED_ADMIN_EMAIL = os.getenv("SEED_ADMIN_EMAIL", "").strip()
 SEED_ADMIN_NAME = os.getenv("SEED_ADMIN_NAME", "").strip()
+# Opcional: e-mails de outras pessoas, separados por vírgula, criados como
+# membros ativos do mesmo cliente. No caminho só pelo WhatsApp (sem WorkOS nem
+# frontend), é assim que se libera mais gente: o número entra em
+# WHATSAPP_ALLOWED_NUMBERS e o e-mail aqui. Idempotente.
+SEED_MEMBER_EMAILS = [
+    e.strip() for e in os.getenv("SEED_MEMBER_EMAILS", "").split(",") if e.strip()
+]
 
 # Sem AUTH_SECRET_KEY, os endpoints /admin/* ficam desligados (403 sempre): o
 # admin inicial entra pelas SEED_* e o serviço arranca sem mais um segredo.
@@ -275,7 +282,8 @@ def run_auth_migrations() -> None:
 def seed_initial_admin() -> bool:
     """Cria o cliente e o admin iniciais a partir das SEED_* (idempotente).
 
-    Não faz nada sem SEED_ADMIN_EMAIL. Devolve True se criou o utilizador.
+    Também cria como membros ativos os e-mails de SEED_MEMBER_EMAILS que ainda
+    não existam. Não faz nada sem SEED_ADMIN_EMAIL. Devolve True se criou o admin.
     """
     if not SEED_ADMIN_EMAIL:
         return False
@@ -308,9 +316,27 @@ def seed_initial_admin() -> bool:
             (client_id, SEED_ADMIN_EMAIL, SEED_ADMIN_NAME or None, SEED_ADMIN_EMAIL),
         )
         created = cursor.rowcount == 1
+        novos = 0
+        for email in SEED_MEMBER_EMAILS:
+            if email.lower() == SEED_ADMIN_EMAIL.lower():
+                continue
+            cursor.execute(
+                """
+                INSERT INTO auth.users
+                    (client_id, email, password_hash, full_name, role, status, activated_at)
+                SELECT %s, %s, NULL, NULL, 'member', 'active', NOW()
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM auth.users WHERE LOWER(email) = LOWER(%s)
+                )
+                """,
+                (client_id, email, email),
+            )
+            novos += cursor.rowcount == 1
         conn.commit()
         if created:
             print(f"[seed] admin inicial criado no cliente {SEED_CLIENT_SLUG}")
+        if novos:
+            print(f"[seed] {novos} membro(s) criado(s) a partir de SEED_MEMBER_EMAILS")
         return created
     finally:
         release_conn(conn)
