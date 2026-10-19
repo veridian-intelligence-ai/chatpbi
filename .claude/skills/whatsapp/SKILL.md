@@ -74,7 +74,7 @@ O token temporário vale 24 horas. Depois disso, a Meta recusa o envio (log `env
 ## Mais pessoas e número próprio
 
 - **Liberar alguém:** no teste, a pessoa adiciona o número na lista de destinatários da Meta (passo 3). Em qualquer caso, a IA acrescenta `numero=email` em `WHATSAPP_ALLOWED_NUMBERS`, e o e-mail precisa ser de um usuário ativo do app: no caminho com o app web, pela skill `login`; no caminho só pelo WhatsApp, a IA acrescenta o e-mail em `SEED_MEMBER_EMAILS`, no serviço `auth`, e o reinício do serviço cadastra a pessoa. Lembrar a pessoa de que quem entra vê o modelo inteiro.
-- **Número próprio** (mais de 5 pessoas ou uso no dia a dia): um número que não esteja em nenhum WhatsApp, verificado na conta do WhatsApp Business, com o nome de exibição aprovado pela Meta e uma forma de pagamento na conta. Segundo a tabela de preços da Meta, mensagem que não é template, enviada dentro da janela de 24 horas depois da mensagem da pessoa, não é cobrada, e é assim que este canal responde. Conferir a tabela atual antes de passar preço ao cliente.
+- **Número próprio** (mais de 5 pessoas ou uso no dia a dia): um número que não esteja em nenhum WhatsApp, verificado na conta do WhatsApp Business, com o nome de exibição aprovado pela Meta e uma forma de pagamento na conta. Desde 01/10/2026, segundo a Meta, cada número tem 1.000 mensagens de serviço por mês sem custo (as respostas enviadas nas 24 horas depois da mensagem da pessoa, que é como este canal responde), e a Meta cobra a partir da 1.001ª. Conferir a tabela atual antes de passar preço ao cliente.
 
 ## Mudar a voz da resposta
 
